@@ -563,11 +563,26 @@ with st.sidebar:
     st.header("⚙️ 配置中心")
     
     # 优先读取 st.secrets, 其次 os.getenv (支持 .env)
-    default_gemini = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") or ""
-    default_apify = st.secrets.get("APIFY_API_TOKEN") or os.getenv("APIFY_API_TOKEN") or ""
-
-    gemini_key = st.text_input("Gemini API Key", value=default_gemini, type="password")
-    apify_token = st.text_input("Apify API Token", value=default_apify, type="password")
+    secrets_gemini = st.secrets.get("GEMINI_API_KEY") or ""
+    secrets_apify = st.secrets.get("APIFY_API_TOKEN") or ""
+    env_gemini = os.getenv("GEMINI_API_KEY") or ""
+    env_apify = os.getenv("APIFY_API_TOKEN") or ""
+    
+    # 如果 secrets 中已配置，则隐藏输入框，直接使用 secrets
+    has_secrets = bool(secrets_gemini and secrets_apify)
+    
+    if has_secrets:
+        # Secrets 已配置，不显示输入框
+        gemini_key = secrets_gemini
+        apify_token = secrets_apify
+        st.success("✅ API 已配置，可直接使用")
+    else:
+        # 未配置 secrets，显示输入框让用户手动输入
+        default_gemini = secrets_gemini or env_gemini
+        default_apify = secrets_apify or env_apify
+        
+        gemini_key = st.text_input("Gemini API Key", value=default_gemini, type="password")
+        apify_token = st.text_input("Apify API Token", value=default_apify, type="password")
     
     st.divider()
     
@@ -582,7 +597,8 @@ with st.sidebar:
     time_filter_hours = TIME_FILTER_OPTIONS[time_filter_label]
 
     st.divider()
-    st.info("💡 请输入 Apify Token 以调用爬虫，以及 Gemini Key 进行分析。")
+    if not has_secrets:
+        st.info("💡 请输入 Apify Token 以调用爬虫，以及 Gemini Key 进行分析。")
 
 # --- 初始化 Session State ---
 if "processed_ads" not in st.session_state:
